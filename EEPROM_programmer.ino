@@ -108,7 +108,7 @@ void printContent(int start)
   {
     Serial.println("---  0  1  2  3  4  5  6  7  8 ||  9  A  B  C  D  E  F ---");
     int firstoffset = start % 16;
-    for (int base = start-firstoffset; base <= pow(2, ADDRPINS) - 16; base += 16)
+    for (int base = (start - firstoffset); base <= pow(2, ADDRPINS) - 16; base += 16)
     {
       byte data[16];
       if (firstoffset != 0)
@@ -148,11 +148,16 @@ void printContent(int start, int ending)
   Serial.println("---  0  1  2  3  4  5  6  7  8 ||  9  A  B  C  D  E  F ---");
   int firstoffset = start % 16;
   int endoffset = ending % 16;
-  for (int base = start; base <= pow(2, ADDRPINS) - 16; base += 16)
+  for (int base = (start - firstoffset); base <= pow(2, ADDRPINS) - 16; base += 16)
   {
-    // TO-DO startoffset & endoffset
     byte data[16];
-    
+    if (firstoffset != 0)
+    {
+      for (int fill = 0; fill < firstoffset; fill++)
+      {
+        data[fill] = B00;
+      }
+    }
     for (int offset = 0; offset <= 15; offset++)
       data[offset] = readEEPROM(base + offset);
 
@@ -163,6 +168,7 @@ void printContent(int start, int ending)
             data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15]);
 
     Serial.println(buf);
+    firstoffset = 0;
   }
 }
 
