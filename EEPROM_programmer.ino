@@ -59,6 +59,7 @@ void setup()
   }
   else
   {
+    printContent(3);
   }
 }
 void loop() {}
@@ -81,9 +82,9 @@ byte readEEPROM(int i)
   return data;
 }
 
-void printContents()
+void printContent()
 {
-  Serial.println("---  0  1  2  3  4  5  6  7  8 ||  9  A  B  C  D  E  F ---");
+  Serial.println("----  0  1  2  3  4  5  6  7 || 8  9  A  B  C  D  E  F ---");
   for (int base = 0; base <= 255; base += 16)
   {
     byte data[16];
@@ -93,7 +94,7 @@ void printContents()
     }
 
     char buf[80];
-    sprintf(buf, "%03x:  %02x %02x %02x %02x %02x %02x %02x %02x   %02x %02x %02x %02x %02x %02x %02x %02x",
+    sprintf(buf, "%04x: %02x %02x %02x %02x %02x %02x %02x %02x   %02x %02x %02x %02x %02x %02x %02x %02x",
             base,
             data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7],
             data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15]);
@@ -106,9 +107,9 @@ void printContent(int start)
 {
   if (start < pow(2, ADDRPINS))
   {
-    Serial.println("---  0  1  2  3  4  5  6  7  8 ||  9  A  B  C  D  E  F ---");
+    Serial.println("----  0  1  2  3  4  5  6  7 || 8  9  A  B  C  D  E  F ---");
     int firstoffset = start % 16;
-    for (int base = (start - firstoffset); base <= pow(2, ADDRPINS) - 16; base += 16)
+    for (float base = (start - firstoffset); base <= pow(2, ADDRPINS) - 16; base += 16)
     {
       byte data[16];
       if (firstoffset != 0)
@@ -119,10 +120,10 @@ void printContent(int start)
         }
       }
       for (int offset = 0 + firstoffset; offset <= 15; offset++)
-        data[offset] = readEEPROM(base + offset);
+        data[offset] = readEEPROM((int)base + offset);
 
       char buf[80];
-      sprintf(buf, "%03X:  %02X %02X %02X %02X %02X %02X %02X %02X || %02X %02X %02X %02X %02X %02X %02X %02X",
+      sprintf(buf, " %04X:  %02X %02X %02X %02X %02X %02X %02X %02X || %02X %02X %02X %02X %02X %02X %02X %02X",
               base,
               data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7],
               data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15]);
@@ -148,7 +149,7 @@ void printContent(int start, int ending)
   Serial.println("---  0  1  2  3  4  5  6  7  8 ||  9  A  B  C  D  E  F ---");
   int firstoffset = start % 16;
   int endoffset = ending % 16;
-  for (int base = (start - firstoffset); base <= pow(2, ADDRPINS) - 16; base += 16)
+  for (long int base = (start - firstoffset); base <= pow(2, ADDRPINS) - 16; base += 16)
   {
     byte data[16];
     if (firstoffset != 0)
@@ -159,7 +160,7 @@ void printContent(int start, int ending)
       }
     }
     for (int offset = 0; offset <= 15; offset++)
-      data[offset] = readEEPROM(base + offset);
+      data[offset] = readEEPROM((int)base + offset);
 
     char buf[80];
     sprintf(buf, "%03X:  %02X %02X %02X %02X %02X %02X %02X %02X || %02X %02X %02X %02X %02X %02X %02X %02X",
@@ -190,4 +191,5 @@ boolean check()
     Serial.println("I/O pins must be in serial");
     return false;
   }
+  return true;
 }
