@@ -15,22 +15,31 @@ boolean check();
 /*
 Set the address given to the A0-A15 pins on EEPROM
 
-@param: Memory address to set (int)
+@param: Memory address to set (unsignet int)
 
 */
-void Address(int dir);
+void Address(unsigned int dir);
+
+
+/*
+Read and shows on serial monitor single memory address data
+
+@param: Memory address to check (unsignet int)
+
+*/
+void singleRead(unsigned int dir);
 
 /*
 Shows on terminal the all the data from the EEPROM
 @param:
     -none:Shows all data.
-    -int:Shows all the data starting from the address given
+    -unsignet int:Shows all the data starting from the address given
     -int,int:Shows all the data starting from the first position to the second one.
 
 @return:None
 */
 void printContent();
-void printContent(int start);
+void printContent(unsigned int start);
 void printContent(int starting, int ending);
 
 /*
@@ -40,7 +49,7 @@ Read EEprom byte on given direction
 
 @return: Byte stored on given address (Byte)
 */
-byte readEEPROM(int i);
+byte readEEPROM(unsigned int i);
 
 int i = DIRECCION;
 
@@ -59,13 +68,14 @@ void setup()
   }
   else
   {
-    printContent(3);
+
+    singleRead(4);
   }
 }
 void loop() {}
 //---------FUNCTIONS--------//
 
-byte readEEPROM(int i)
+byte readEEPROM(unsigned int i)
 {
   // I/O EEPROM pins configured as INPUT
   for (int pin = EEPROM_D0; pin <= EEPROM_D7; pin++)
@@ -82,10 +92,29 @@ byte readEEPROM(int i)
   return data;
 }
 
+void singleRead(unsigned int dir)
+{
+  byte data = readEEPROM(dir);
+  char buffer[18];
+  sprintf(buffer, "%04X : %02X %d%d%d%d%d%d%d%d",
+          dir,
+          data,
+          data >> 7 & 1,
+          data >> 6 & 1,
+          data >> 5 & 1,
+          data >> 4 & 1,
+          data >> 3 & 1,
+          data >> 2 & 1,
+          data >> 1 & 1,
+          data & 1);
+  Serial.println(buffer);
+}
+
 void printContent()
 {
-  Serial.println("----  0  1  2  3  4  5  6  7 || 8  9  A  B  C  D  E  F ---");
-  for (int base = 0; base <= 255; base += 16)
+  Serial.println("----  0  1  2  3  4  5  6  7 || 8  9  A  B  C  D  E  F ----");
+  unsigned int add = 16;
+  for (unsigned int base = 0; base <= pow(2, ADDRPINS) - 15; base += add)
   {
     byte data[16];
     for (int offset = 0; offset <= 15; offset += 1)
@@ -94,22 +123,26 @@ void printContent()
     }
 
     char buf[80];
-    sprintf(buf, "%04x: %02x %02x %02x %02x %02x %02x %02x %02x   %02x %02x %02x %02x %02x %02x %02x %02x",
+    sprintf(buf, "%04X:  %02X %02X %02X %02X %02X %02X %02X %02X || %02X %02X %02X %02X %02X %02X %02X %02X",
             base,
             data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7],
             data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15]);
 
     Serial.println(buf);
+    if (base == (unsigned int)(pow(2, ADDRPINS)) - 15)
+      add = 15;
   }
+  Serial.println("--");
 }
 
-void printContent(int start)
+void printContent(unsigned int start)
 {
-  if (start < pow(2, ADDRPINS))
+  if (start < (unsigned int)(pow(2, ADDRPINS)))
   {
     Serial.println("----  0  1  2  3  4  5  6  7 || 8  9  A  B  C  D  E  F ---");
-    int firstoffset = start % 16;
-    for (float base = (start - firstoffset); base <= pow(2, ADDRPINS) - 16; base += 16)
+    unsigned int firstoffset = start % 16;
+    int add = 16;
+    for (unsigned int base = (start - firstoffset); base <= pow(2, ADDRPINS) - 15; base += add)
     {
       byte data[16];
       if (firstoffset != 0)
@@ -120,17 +153,20 @@ void printContent(int start)
         }
       }
       for (int offset = 0 + firstoffset; offset <= 15; offset++)
-        data[offset] = readEEPROM((int)base + offset);
+        data[offset] = readEEPROM(base + offset);
 
       char buf[80];
-      sprintf(buf, " %04X:  %02X %02X %02X %02X %02X %02X %02X %02X || %02X %02X %02X %02X %02X %02X %02X %02X",
+      sprintf(buf, "%04X:  %02X %02X %02X %02X %02X %02X %02X %02X || %02X %02X %02X %02X %02X %02X %02X %02X",
               base,
               data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7],
               data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15]);
 
       Serial.println(buf);
       firstoffset = 0;
+      if (base == (unsigned int)(pow(2, ADDRPINS)) - 15)
+        add = 15;
     }
+    Serial.println("--");
   }
   else
   {
@@ -173,7 +209,7 @@ void printContent(int start, int ending)
   }
 }
 
-void Address(int dir)
+void Address(unsigned int dir)
 {
 
   shiftOut(DATAPIN, SHIFTPIN, MSBFIRST, dir >> 8);
