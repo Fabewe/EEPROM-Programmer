@@ -61,17 +61,20 @@ void setup()
   pinMode(STORAGEPIN, OUTPUT);
   pinMode(BUTTONPIN, INPUT);
   digitalWrite(STORAGEPIN, HIGH);
-  Serial.begin(57600);
+  Serial.begin(38400,SERIAL_8O1);
   if (!check())
   {
     Serial.println("Error detected, execution aborted!!");
   }
   else
   {
-
-    singleRead(4);
+    singleRead(0x05FA);
+    //printContent();
+    
   }
 }
+
+
 void loop() {}
 //---------FUNCTIONS--------//
 
