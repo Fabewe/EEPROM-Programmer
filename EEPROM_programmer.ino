@@ -2,10 +2,14 @@
 #define SHIFTPIN 13
 #define STORAGEPIN 12
 #define BUTTONPIN A2
+#define WEPIN A3
+#define OEPIN A4
 #define DIRECCION 0
 #define EEPROM_D0 2
 #define EEPROM_D7 9
-#define ADDRPINS 16
+#define ADDRPINS 6
+#define NBYTES 4
+
 
 /*
 Quick check to parameters given to the program
@@ -20,6 +24,14 @@ Set the address given to the A0-A15 pins on EEPROM
 */
 void Address(unsigned int dir);
 
+/*
+Write data on the EEPROM
+
+@param: Byte to write on EEPROM
+@param: Control to turn pins to OUTPUT
+
+*/
+bool singleWrite(byte data,bool control);
 
 /*
 Read and shows on serial monitor single memory address data
@@ -48,6 +60,8 @@ Read EEprom byte on given direction
 @param: Memory address to read (int)
 
 @return: Byte stored on given address (Byte)
+△△△△ NO OUTPUT ENABLE CONTROL △△△△
+
 */
 byte readEEPROM(unsigned int i);
 
@@ -59,7 +73,10 @@ void setup()
   pinMode(DATAPIN, OUTPUT);
   pinMode(SHIFTPIN, OUTPUT);
   pinMode(STORAGEPIN, OUTPUT);
+  pinMode(WEPIN,OUTPUT);
+  pinMode(OEPIN,OUTPUT);
   pinMode(BUTTONPIN, INPUT);
+  digitalWrite(WEPIN, HIGH);
   digitalWrite(STORAGEPIN, HIGH);
   Serial.begin(38400,SERIAL_8O1);
   if (!check())
@@ -68,8 +85,8 @@ void setup()
   }
   else
   {
-    singleRead(0x05FA);
-    //printContent();
+    
+    printContent();
     
   }
 }
@@ -77,9 +94,24 @@ void setup()
 
 void loop() {}
 //---------FUNCTIONS--------//
+bool singleWrite(byte data,bool control){
+  if (control) for (int pin = EEPROM_D0; pin <= EEPROM_D7; pin++){ pinMode(pin, OUTPUT);}
+
+  for(int i=EEPROM_D0,j=0;i<=EEPROM_D7;i++,j++){digitalWrite(i,(data>>j)&1);};
+
+  digitalWrite(WEPIN, LOW);
+  delayMicroseconds(1);
+  digitalWrite(WEPIN, HIGH);
+  delay(10);
+
+  return true;
+}
+
+bool multiWrite(){}
 
 byte readEEPROM(unsigned int i)
 {
+  
   // I/O EEPROM pins configured as INPUT
   for (int pin = EEPROM_D0; pin <= EEPROM_D7; pin++)
     pinMode(pin, INPUT);
@@ -97,6 +129,7 @@ byte readEEPROM(unsigned int i)
 
 void singleRead(unsigned int dir)
 {
+  digitalWrite(OEPIN,LOW);
   byte data = readEEPROM(dir);
   char buffer[18];
   sprintf(buffer, "%04X : %02X %d%d%d%d%d%d%d%d",
@@ -111,11 +144,13 @@ void singleRead(unsigned int dir)
           data >> 1 & 1,
           data & 1);
   Serial.println(buffer);
+  digitalWrite(OEPIN,HIGH);
 }
 
 void printContent()
 {
-  Serial.println("----  0  1  2  3  4  5  6  7 || 8  9  A  B  C  D  E  F ----");
+  digitalWrite(OEPIN,LOW);
+  Serial.println("----   0  1  2  3  4  5  6  7  ||  8  9  A  B  C  D  E  F ----");
   unsigned int add = 16;
   for (unsigned int base = 0; base <= pow(2, ADDRPINS) - 15; base += add)
   {
@@ -135,14 +170,16 @@ void printContent()
     if (base == (unsigned int)(pow(2, ADDRPINS)) - 15)
       add = 15;
   }
+  digitalWrite(OEPIN,HIGH);
   Serial.println("--");
+
 }
 
 void printContent(unsigned int start)
 {
   if (start < (unsigned int)(pow(2, ADDRPINS)))
   {
-    Serial.println("----  0  1  2  3  4  5  6  7 || 8  9  A  B  C  D  E  F ---");
+    Serial.println("----   0  1  2  3  4  5  6  7  ||  8  9  A  B  C  D  E  F ----");
     unsigned int firstoffset = start % 16;
     int add = 16;
     for (unsigned int base = (start - firstoffset); base <= pow(2, ADDRPINS) - 15; base += add)
