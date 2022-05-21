@@ -7,8 +7,10 @@
 #define DIRECCION 0
 #define EEPROM_D0 2
 #define EEPROM_D7 9
-#define ADDRPINS 6
-#define NBYTES 4
+#define ADDRPINS 11
+#define NBYTES 4    //to write.
+
+
 
 
 /*
@@ -17,7 +19,8 @@ Quick check to parameters given to the program
 boolean check();
 
 /*
-Set the address given to the A0-A15 pins on EEPROM
+Set the address given to the A0-A15 pins on EEPROM.
+MANDATORY TO USE BEFORE singleWrite()
 
 @param: Memory address to set (unsignet int)
 
@@ -26,6 +29,7 @@ void Address(unsigned int dir);
 
 /*
 Write data on the EEPROM
+MANDATORY TO USE AFTER Address()
 
 @param: Byte to write on EEPROM
 @param: Control to turn pins to OUTPUT
@@ -36,6 +40,7 @@ bool singleWrite(byte data,bool control);
 /*
 Read and shows on serial monitor single memory address data
 
+
 @param: Memory address to check (unsignet int)
 
 */
@@ -45,7 +50,7 @@ void singleRead(unsigned int dir);
 Shows on terminal the all the data from the EEPROM
 @param:
     -none:Shows all data.
-    -unsignet int:Shows all the data starting from the address given
+    -unsigned int:Shows all the data starting from the address given
     -int,int:Shows all the data starting from the first position to the second one.
 
 @return:None
@@ -67,6 +72,8 @@ byte readEEPROM(unsigned int i);
 
 int i = DIRECCION;
 
+byte Writting[NBYTES]={0x00,0x00,0x00,0x00};
+
 void setup()
 {
 
@@ -77,16 +84,19 @@ void setup()
   pinMode(OEPIN,OUTPUT);
   pinMode(BUTTONPIN, INPUT);
   digitalWrite(WEPIN, HIGH);
+  digitalWrite(OEPIN, HIGH);
   digitalWrite(STORAGEPIN, HIGH);
   Serial.begin(38400,SERIAL_8O1);
+  delay(10);
   if (!check())
   {
     Serial.println("Error detected, execution aborted!!");
   }
   else
   {
-    
-    printContent();
+     //  ~ Your code here ~
+
+     
     
   }
 }
@@ -95,9 +105,12 @@ void setup()
 void loop() {}
 //---------FUNCTIONS--------//
 bool singleWrite(byte data,bool control){
+  digitalWrite(OEPIN, HIGH);
   if (control) for (int pin = EEPROM_D0; pin <= EEPROM_D7; pin++){ pinMode(pin, OUTPUT);}
 
-  for(int i=EEPROM_D0,j=0;i<=EEPROM_D7;i++,j++){digitalWrite(i,(data>>j)&1);};
+  for(int i=EEPROM_D0,j=0;i<=EEPROM_D7;i++,j++){digitalWrite(i,(data>>j)&1);
+                                                  //Serial.println((data>>j)&1);
+                                                  };
 
   digitalWrite(WEPIN, LOW);
   delayMicroseconds(1);
@@ -111,13 +124,13 @@ bool multiWrite(){}
 
 byte readEEPROM(unsigned int i)
 {
-  
+  // Set the address on A0-A15 pins on eeprom
+  Address(i);
   // I/O EEPROM pins configured as INPUT
   for (int pin = EEPROM_D0; pin <= EEPROM_D7; pin++)
     pinMode(pin, INPUT);
 
-  // Set the address on A0-A16 pins on eeprom
-  Address(i);
+  
 
   byte data = 0;
 
@@ -145,6 +158,7 @@ void singleRead(unsigned int dir)
           data & 1);
   Serial.println(buffer);
   digitalWrite(OEPIN,HIGH);
+  delay(10);
 }
 
 void printContent()
@@ -251,11 +265,9 @@ void printContent(int start, int ending)
 
 void Address(unsigned int dir)
 {
-
   shiftOut(DATAPIN, SHIFTPIN, MSBFIRST, dir >> 8);
   shiftOut(DATAPIN, SHIFTPIN, MSBFIRST, dir);
 
-  digitalWrite(STORAGEPIN, HIGH);
   digitalWrite(STORAGEPIN, LOW);
   digitalWrite(STORAGEPIN, HIGH);
 }
