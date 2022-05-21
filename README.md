@@ -1,2 +1,2 @@
 # EEPROM-Programmer
-Not finished yet//
+Bugs to be fixed
