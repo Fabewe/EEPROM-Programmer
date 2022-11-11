@@ -8,7 +8,9 @@
 #define EEPROM_D0 2
 #define EEPROM_D7 9
 #define ADDRPINS 11
-#define NBYTES 4    //to write.
+#define NBYTES 4  //to write.
+
+#define LISTA 0x00, 0x00, 0x00, 0x00
 
 
 
@@ -35,7 +37,19 @@ MANDATORY TO USE AFTER Address()
 @param: Control to turn pins to OUTPUT
 
 */
-bool singleWrite(byte data,bool control);
+bool singleWrite(byte data, bool control);
+
+
+/*
+Write multiple bytes giving the first address
+
+
+@param: Base memory address.
+@param: Byte array to be written.
+
+*/
+
+void multiWrite(unsigned int baseDir, byte* byteList);
 
 /*
 Read and shows on serial monitor single memory address data
@@ -72,45 +86,40 @@ byte readEEPROM(unsigned int i);
 
 int i = DIRECCION;
 
-byte Writting[NBYTES]={0x00,0x00,0x00,0x00};
+byte Writting[NBYTES] = { LISTA };
 
-void setup()
-{
+void setup() {
 
   pinMode(DATAPIN, OUTPUT);
   pinMode(SHIFTPIN, OUTPUT);
   pinMode(STORAGEPIN, OUTPUT);
-  pinMode(WEPIN,OUTPUT);
-  pinMode(OEPIN,OUTPUT);
+  pinMode(WEPIN, OUTPUT);
+  pinMode(OEPIN, OUTPUT);
   pinMode(BUTTONPIN, INPUT);
   digitalWrite(WEPIN, HIGH);
   digitalWrite(OEPIN, HIGH);
   digitalWrite(STORAGEPIN, HIGH);
-  Serial.begin(38400,SERIAL_8O1);
+  Serial.begin(38400, SERIAL_8O1);
   delay(10);
-  if (!check())
-  {
+  if (!check()) {
     Serial.println("Error detected, execution aborted!!");
-  }
-  else
-  {
-     //  ~ Your code here ~
-
-     
-    
+  } else {
+    //  ~ Your code here ~
   }
 }
 
 
 void loop() {}
 //---------FUNCTIONS--------//
-bool singleWrite(byte data,bool control){
+bool singleWrite(byte data, bool control) {
   digitalWrite(OEPIN, HIGH);
-  if (control) for (int pin = EEPROM_D0; pin <= EEPROM_D7; pin++){ pinMode(pin, OUTPUT);}
+  if (control)
+    for (int pin = EEPROM_D0; pin <= EEPROM_D7; pin++) { pinMode(pin, OUTPUT); }
 
-  for(int i=EEPROM_D0,j=0;i<=EEPROM_D7;i++,j++){digitalWrite(i,(data>>j)&1);
-                                                  //Serial.println((data>>j)&1);
-                                                  };
+  for (int i = EEPROM_D0, j = 0; i <= EEPROM_D7; i++, j++) {
+    digitalWrite(i, (data >> j) & 1);
+    //Serial.println((data>>j)&1);
+  };
 
   digitalWrite(WEPIN, LOW);
   delayMicroseconds(1);
@@ -120,17 +129,15 @@ bool singleWrite(byte data,bool control){
   return true;
 }
 
-bool multiWrite(){}
 
-byte readEEPROM(unsigned int i)
-{
+byte readEEPROM(unsigned int i) {
   // Set the address on A0-A15 pins on eeprom
   Address(i);
   // I/O EEPROM pins configured as INPUT
   for (int pin = EEPROM_D0; pin <= EEPROM_D7; pin++)
     pinMode(pin, INPUT);
 
-  
+
 
   byte data = 0;
 
@@ -140,9 +147,8 @@ byte readEEPROM(unsigned int i)
   return data;
 }
 
-void singleRead(unsigned int dir)
-{
-  digitalWrite(OEPIN,LOW);
+void singleRead(unsigned int dir) {
+  digitalWrite(OEPIN, LOW);
   byte data = readEEPROM(dir);
   char buffer[18];
   sprintf(buffer, "%04X : %02X %d%d%d%d%d%d%d%d",
@@ -157,20 +163,18 @@ void singleRead(unsigned int dir)
           data >> 1 & 1,
           data & 1);
   Serial.println(buffer);
-  digitalWrite(OEPIN,HIGH);
+  digitalWrite(OEPIN, HIGH);
+  return data;
   delay(10);
 }
 
-void printContent()
-{
-  digitalWrite(OEPIN,LOW);
+void printContent() {
+  digitalWrite(OEPIN, LOW);
   Serial.println("----   0  1  2  3  4  5  6  7  ||  8  9  A  B  C  D  E  F ----");
   unsigned int add = 16;
-  for (unsigned int base = 0; base <= pow(2, ADDRPINS) - 15; base += add)
-  {
+  for (unsigned int base = 0; base <= pow(2, ADDRPINS) - 15; base += add) {
     byte data[16];
-    for (int offset = 0; offset <= 15; offset += 1)
-    {
+    for (int offset = 0; offset <= 15; offset += 1) {
       data[offset] = readEEPROM(base + offset);
     }
 
@@ -184,25 +188,19 @@ void printContent()
     if (base == (unsigned int)(pow(2, ADDRPINS)) - 15)
       add = 15;
   }
-  digitalWrite(OEPIN,HIGH);
+  digitalWrite(OEPIN, HIGH);
   Serial.println("--");
-
 }
 
-void printContent(unsigned int start)
-{
-  if (start < (unsigned int)(pow(2, ADDRPINS)))
-  {
+void printContent(unsigned int start) {
+  if (start < (unsigned int)(pow(2, ADDRPINS))) {
     Serial.println("----   0  1  2  3  4  5  6  7  ||  8  9  A  B  C  D  E  F ----");
     unsigned int firstoffset = start % 16;
     int add = 16;
-    for (unsigned int base = (start - firstoffset); base <= pow(2, ADDRPINS) - 15; base += add)
-    {
+    for (unsigned int base = (start - firstoffset); base <= pow(2, ADDRPINS) - 15; base += add) {
       byte data[16];
-      if (firstoffset != 0)
-      {
-        for (int fill = 0; fill < firstoffset; fill++)
-        {
+      if (firstoffset != 0) {
+        for (int fill = 0; fill < firstoffset; fill++) {
           data[fill] = B00;
         }
       }
@@ -221,17 +219,13 @@ void printContent(unsigned int start)
         add = 15;
     }
     Serial.println("--");
-  }
-  else
-  {
+  } else {
     Serial.println("Error: Address is not in the access range");
   }
 }
 
-void printContent(int start, int ending)
-{
-  if (start > ending)
-  {
+void printContent(int start, int ending) {
+  if (start > ending) {
     int aux = start;
     start = ending;
     ending = aux;
@@ -239,13 +233,10 @@ void printContent(int start, int ending)
   Serial.println("---  0  1  2  3  4  5  6  7  8 ||  9  A  B  C  D  E  F ---");
   int firstoffset = start % 16;
   int endoffset = ending % 16;
-  for (long int base = (start - firstoffset); base <= pow(2, ADDRPINS) - 16; base += 16)
-  {
+  for (long int base = (start - firstoffset); base <= pow(2, ADDRPINS) - 16; base += 16) {
     byte data[16];
-    if (firstoffset != 0)
-    {
-      for (int fill = 0; fill < firstoffset; fill++)
-      {
+    if (firstoffset != 0) {
+      for (int fill = 0; fill < firstoffset; fill++) {
         data[fill] = B00;
       }
     }
@@ -263,8 +254,7 @@ void printContent(int start, int ending)
   }
 }
 
-void Address(unsigned int dir)
-{
+void Address(unsigned int dir) {
   shiftOut(DATAPIN, SHIFTPIN, MSBFIRST, dir >> 8);
   shiftOut(DATAPIN, SHIFTPIN, MSBFIRST, dir);
 
@@ -272,10 +262,25 @@ void Address(unsigned int dir)
   digitalWrite(STORAGEPIN, HIGH);
 }
 
-boolean check()
-{
-  if (EEPROM_D7 != EEPROM_D0 + 7)
-  {
+void multiWrite(unsigned int baseDir, byte * byteList) {
+
+  if(baseDir + NBYTES > pow(2,ADDRPINS)){
+    return;
+  }
+
+  for (int pin = EEPROM_D0; pin <= EEPROM_D7; pin++) { pinMode(pin, OUTPUT); }
+
+  for (int i = 0; i < (sizeof(byteList)/sizeof(byte)); i++) {
+    Address(baseDir+0);
+    singleWrite(byteList[i],false);
+    delay(1);
+  }
+}
+
+
+
+boolean check() {
+  if (EEPROM_D7 != EEPROM_D0 + 7) {
     Serial.println("I/O pins must be in serial");
     return false;
   }
